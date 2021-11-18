@@ -5,6 +5,7 @@ Branches available
 - KDTree: CPU KDTree
 ## Overview
 This algorithm is designed to reduce the number of blocks needed to represent a block model with lossless compression voxels. The block model is a 3D volume containing up to 256 different types of blocks. The volume is subdivied into parent blocks that tile the volume with no remainder, blocks must be always able to be contained in a single parent block.
+![KDTree Parrot](https://i.imgur.com/BIMgGgv.png)
 ## Input Files
 Input should be in a .csv or .txt and follow the form:
 ```
