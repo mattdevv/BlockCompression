@@ -6,7 +6,6 @@
 FILE* pFile;
 #endif
 
-#define SKIP_AMOUNT 14
 
 char TagReader::charBuffer[MAX_LINE_LENGTH];
 char* TagReader::bufferEnd;
@@ -74,17 +73,17 @@ string TagReader::getNextTagName()
                     reading = false;
 
                     // move over minimum distance of next tag position/size
-                    iter += SKIP_AMOUNT;
+                    iter += 14;
 
                     // concatenate cached start to tag name if needed
                     if (usedCache)
                     {
                         usedCache = false;
-                        return cachedString + string(begin_str, iter - SKIP_AMOUNT);
+                        return cachedString + string(begin_str, iter - 14);
                     }
 
                     // extract tag between start and end point
-                    return string(begin_str, iter - SKIP_AMOUNT);
+                    return string(begin_str, iter - 14);
                 }
                 // found start
                 else

@@ -2,18 +2,16 @@
 
 #include <iostream>
 #include <string>
-#include <cstdio>
+#include <stdio.h>
 
-// how many chars will be read at once
 #define MAX_LINE_LENGTH 1048576
 
 using namespace std;
 
 class TagReader
 {
-private:
-	static char charBuffer[MAX_LINE_LENGTH];
 	static char* bufferEnd;
+	static char charBuffer[MAX_LINE_LENGTH];
 
 public:
 	static string setup();

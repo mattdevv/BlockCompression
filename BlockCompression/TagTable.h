@@ -7,22 +7,33 @@
 #include <map>
 #include <iostream>
 #include <vector>
-#include "uDataTypes.h"
+#include "cuda_runtime.h"
+#include "Helpers.h"
+#include "DataTypes.h"
 
 using namespace std;
+
+const ushort maxTagCount = 256;
+
+// #define uchar unsigned char
 
 class TagTable
 {
 private:
+    // Translate string to id
     map<string, uchar> tags;
+
+    // Translate id to string
     vector<string> names;
-    int numTags;
-    
+
+    // ID
+    int id;
+
 public:
     TagTable();
-    string getTag(uchar id);
-    string* getTagPointer(uchar id);
+    string getTag(uchar _id);
+    string* getTagPointer(uchar _id);
     uchar getID(string tag);
-    int getTotalTags() const;
+    int getTotalTags();
     void reset();
 };

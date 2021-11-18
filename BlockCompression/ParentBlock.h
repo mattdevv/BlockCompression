@@ -1,15 +1,17 @@
 #pragma once
 
-#include <iostream>
-#include <string>
 #include <vector>
+#include <string>
+#include <iostream>
+#include <math.h>
+#include <stack>
 #include "vec3.h"
 #include "TagTable.h"
-#include "uDataTypes.h"
 
 using namespace std;
 
-const uint NULL_INDEX = 0xFFFFFFFF;
+#define uchar unsigned char
+#define GET_NEXT_JOB(stack) stack.top(); stack.pop();
 
 // enum to easily reference an axis
 enum class Axis { x, y, z };
@@ -22,45 +24,59 @@ struct SubVolume
 	vec3<ushort> size;
 };
 
-struct Block
+// an axis and a value that seperates data
+struct Split
 {
-	bool isValid;
-	SubVolume subVolume;
-	uchar ID;
-	unsigned long index;
+	Axis axis;
+	ushort point;
+};
+
+// current gain and whether data was homogeneous
+struct GainLR
+{
+	float gain;
+	bool leftSame;
+	bool rightSame;
+};
+
+// best split and whether sub-volume can be printed as it is homogeneous
+struct SplitResult
+{
+	Split split;
+	bool printLeft;
+	bool printRight;
 };
 
 class ParentBlock
 {
 private:
-	static vec3<ulong> translations;		// offsets to move through 1D array in 3D 
-	static TagTable* tt;							// access to global tag IDs/names
+	static vec3<unsigned long> translations;		// offsets to move through 1D array in 3D 
+	static TagTable<string, uchar>* tt;				// access to global tag IDs/names
 	static vec3<ushort> pBlockDim;					// number of voxels per dimension in a parent block
-	uint currentIndex;								// next empty index to read voxels into
-	vec3<ushort> originWS{};						// offset from global origin to local origin
-	vector<Block> blocks;
-	vector<uint> blockIndices;
 
-	static uint convert3DIndexTo1D(const vec3<ushort>& position);
-	void fillSubVolume(uint newValue, const SubVolume& subVolume);
-	void refreshBlockIndices();
-	void mergeUpY(Block& block, const SubVolume& subVolume);
-	void mergeUpZ(Block& block, const SubVolume& subVolume);
-	bool shelfCompressY(const SubVolume& subVolume, uint index, uchar topID);
-	bool shelfCompressZ(const SubVolume& subVolume, uint index, uchar topID);
-	void shelfY();
-	void shelfZ();
-	void shelfCompress();
-	void greedyCompressY();
-	void greedyCompressZ();
-	void printBlocks();
-	void printWholeParentBlock();
-	bool allSameTag();
+	vector<uchar> voxels;							// voxels contained in this block
+	vec3<ushort> originWS;							// offset from global origin to local origin
+	unsigned long arrayIndex;						// index to store next voxel in voxels 
+
+	int localIDCounter;								// count of tags in this pBlock
+	map<uchar, uchar> localIDTable;					// map between global and local tagID's
+	vector<string*> tagNames;						// string name which local tagID refers to
+	uchar getLocalID(uchar globalID);				// convert global ID to local ID
+
+	stack<SubVolume> jobStack;						// list of jobs needed to complete KDTreePrint()
+
+	unsigned long convert3DIndexTo1D(vec3<ushort>& position);
+	void KDTreePrint();
+	void buildSliceTallys(vector<vector<int>>& slicesYZ, vector<vector<int>>& slicesXZ, vector<vector<int>>& slicesXY, vec3<ushort>& origin, vec3<ushort>& size);
+	SplitResult ChooseSplit(vec3<ushort>& origin, vec3<ushort>& size);
+	GainLR findGain(vector<int>& left, vector<int>& right, float totalInfo);
+	
 
 public:
-	ParentBlock(vec3<ushort> _originWS);
-	static void setup(vec3<ushort> dimensions, TagTable* planeTagTable);
+	ParentBlock(vec3<ushort> dimensions);
+	static void setup(vec3<ushort> dimensions, TagTable<string, uchar>* tt);
 	void compressPrint();
+	void printRaw();
 	void reset(int numActivePlanes);
-	void insertBlockLine(vec3<ushort> origin, ushort length, uchar ID);
+	void insertVoxel(uchar tag);
 };

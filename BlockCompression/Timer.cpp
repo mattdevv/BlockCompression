@@ -1,77 +1,72 @@
 #include "Timer.h"
 
-Timer::Timer(string outputName, bool startImmediately = true)
+Timer::Timer(string id)
 {
-    name = outputName;
-    totalTime = 0;
-
-    if (startImmediately)
-		start();
+    name = id;
+    start();
 }
 
 void Timer::start()
 {
     m_StartTime = std::chrono::system_clock::now();
-    running = true;
+    m_bRunning = true;
 }
 
 void Timer::stop()
 {
     m_EndTime = std::chrono::system_clock::now();
-    running = false;
-
-    totalTime += Timer::elapsedMicroseconds();
-}
-
-void Timer::reset()
-{
-    if (running)
-        stop();
-
-    totalTime = 0;
-}
-
-void Timer::print()
-{
-    if (running)
-        stop();
+    m_bRunning = false;
 
     ofstream myfile;
     myfile.open("timeoutput.txt", ios::app);
-    myfile << 
-        name + ":\n" + 
-        to_string(getSeconds()) + " seconds\n" + 
-        to_string(getMilliseconds()) + " milliseconds\n" + 
-        to_string(getMicroseconds()) + " microseconds\n\n";
+    myfile << name + ":\n" + to_string(elapsedSeconds()) + " seconds\n" + to_string(elapsedMilliseconds()) + " milliseconds\n" + to_string(elapsedMicroseconds()) + " microseconds\n\n";
     myfile.close();
 }
 
-double Timer::elapsedSeconds() const
+double Timer::elapsedSeconds()
 {
-    return (double)(std::chrono::duration_cast<std::chrono::seconds>(m_EndTime - m_StartTime).count());
+    std::chrono::time_point<std::chrono::system_clock> endTime;
+
+    if (m_bRunning)
+    {
+        endTime = std::chrono::system_clock::now();
+    }
+    else
+    {
+        endTime = m_EndTime;
+    }
+
+    return (double)(std::chrono::duration_cast<std::chrono::seconds>(endTime - m_StartTime).count());
 }
 
-double Timer::elapsedMilliseconds() const
+double Timer::elapsedMilliseconds()
 {
-    return (double)(std::chrono::duration_cast<std::chrono::milliseconds>(m_EndTime - m_StartTime).count());
+    std::chrono::time_point<std::chrono::system_clock> endTime;
+
+    if (m_bRunning)
+    {
+        endTime = std::chrono::system_clock::now();
+    }
+    else
+    {
+        endTime = m_EndTime;
+    }
+
+    return (double)(std::chrono::duration_cast<std::chrono::milliseconds>(endTime - m_StartTime).count());
 }
 
-double Timer::elapsedMicroseconds() const
+double Timer::elapsedMicroseconds()
 {
-    return (double)(std::chrono::duration_cast<std::chrono::microseconds>(m_EndTime - m_StartTime).count());
-}
+    std::chrono::time_point<std::chrono::system_clock> endTime;
 
-double Timer::getSeconds() const
-{
-    return totalTime / 1000000.0;
-}
+    if (m_bRunning)
+    {
+        endTime = std::chrono::system_clock::now();
+    }
+    else
+    {
+        endTime = m_EndTime;
+    }
 
-double Timer::getMilliseconds() const
-{
-    return totalTime / 1000.0;
-}
-
-double Timer::getMicroseconds() const
-{
-    return totalTime;
+    return (double)(std::chrono::duration_cast<std::chrono::microseconds>(endTime - m_StartTime).count());
 }

@@ -1,40 +1,48 @@
 #pragma once
 
+//#define DEBUG
+
 #include <iostream>
 #include <sstream>
 #include <vector>
 #include <string>
 
+#ifdef DEBUG
+#include <fstream>
+#define MAX_LINE_LENGTH 100
+#else
 #include "TagReader.h"
+#endif
 
 #include "ParentBlock.h"
 #include "TagTable.h"
 #include "vec3.h"
 #include "Timer.h"
-#include "uDataTypes.h"
+
 
 using namespace std;
+
+#define uchar unsigned char
 
 class BlockPlane
 {
 private:
-    static TagTable tagTable;                           // stores global ID for each possible tag
+    static TagTable<string, uchar> tagTable;            // stores global ID for each possible tag
     static vec3<ushort> volumeDim;                      // how many voxels fit in volume per dimension
     static vec3<ushort> pBlockDim;                      // how many voxels fit in a parent-block per dimension
     static vec3<ushort> numPBlocks;                     // how many Parent-blocks fit in volume per dimension
     static ushort currentPlane;                         // which XY plane (of parent blocks) is next to read
-    static ushort numInstances;                         // number of instances of BlockPlane
+    static int numInstances;                            // number of instances of BlockPlane
     static void readDimensions();                       // read dimensions to be used in creating BlockPlanes/ParentBlocks
-    static string getTagFromChars(char* start);         // Get the tag from a input voxel description string
 
     vector<ParentBlock> parentBlocks;                   // vector of parent blocks
-    ushort planeID;                                     // this BlockPlane's instance ID             
+    int ID;                                             // this BlockPlane's instance ID             
     void createParentBlocks();                          // allocate memory for this BlockPlane's ParentBlocks
+    string getTagFromChars(char* voxel);                // Get the tag from a input voxel description string
 
 public:
     static void setup();                                // call functions that prepare BlockPlane for use
     static bool canRead();                              // check whether there are more block planes to be read
-    static bool canUseOnePlane();                       // checks whether 1 plane of parent blocks covers entire volume
 
     BlockPlane();
     void printBlockPlane();

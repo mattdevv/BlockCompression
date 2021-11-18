@@ -2,62 +2,58 @@
 
 TagTable::TagTable()
 {
-    numTags = 0;
-    constexpr int numUniqueCharValues = 256;
-    names.reserve(numUniqueCharValues);
+    id = 0;
+    names.reserve(maxTagCount);
 }
 
 // Return the tag from an id
-string TagTable::getTag(const uchar id)
+string TagTable::getTag(uchar _id)
 {
-    return names[id];
+    return names[_id];
 }
 
 // Return the tag from an id
-string* TagTable::getTagPointer(const uchar id)
+string* TagTable::getTagPointer(uchar _id)
 {
-    return &names[id];
+    return &names[_id];
 }
 
 // Return the id if it is in the map
-// Otherwise insert to both maps
+// Otherwise add to both maps
 uchar TagTable::getID(string tag)
 {
-    // Set the next id
-    map<string, uchar>::iterator lookup = tags.find(tag);
 
-    // 'tag' is in the map, return stored ID
-    if (lookup != tags.end())
-    {
-        return lookup->second;
-    }
-    // else add to map and vector, return the new ID
+    // Set the next id
+    map<string, unsigned char>::iterator lookup = tags.find(tag);
+
+    // 'tag' is in the map, return from map
+    if (lookup != tags.end()) return lookup->second;
+
+    // Else add to both maps, return nextID
     else
     {
-        // Get a new id
-        uchar nextID = numTags;
+        // Get an id
+        unsigned char nextID = id;
 
         // Add to the maps
         tags[tag] = nextID;
         names.push_back(tag);
 
         // Increment id for next tag
-        numTags++;
+        id++;
 
         return nextID;
     }
 }
 
-// public getter for number of held tags
-int TagTable::getTotalTags() const
+int TagTable::getTotalTags()
 {
-    return numTags;
+    return id;
 }
 
-// clear contents of a TagTable
 void TagTable::reset()
 {
-    numTags = 0;
+    id = 0;
 
     tags.clear();
     names.clear();
