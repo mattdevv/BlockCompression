@@ -11,23 +11,16 @@ using namespace std;
 class Timer
 {
 public:
-    Timer(string outputName, bool startImmediately);
+    Timer(string id);
     void start();
     void stop();
-    void reset();
-    void print();
+    double elapsedMilliseconds();
+    double elapsedMicroseconds();
+    double elapsedSeconds();
 
 private:
     string name;
     std::chrono::time_point<std::chrono::system_clock> m_StartTime;
     std::chrono::time_point<std::chrono::system_clock> m_EndTime;
-    double totalTime;
-    bool running;
-
-    double elapsedSeconds() const;
-    double elapsedMilliseconds() const;
-    double elapsedMicroseconds() const;
-    double getSeconds() const;
-    double getMilliseconds() const;
-    double getMicroseconds() const;
+    bool m_bRunning = false;
 };

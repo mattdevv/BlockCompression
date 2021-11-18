@@ -3,6 +3,8 @@
 
 #include <string>
 
+#define ushort unsigned short
+
 // struct to hold per axis data
 template<typename T>
 struct vec3
@@ -26,7 +28,6 @@ struct vec3
 		case 2:
 			return z;
 		}
-		return (T)0;
 	}
 
 	vec3<T> operator* (vec3<T> b)

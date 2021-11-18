@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Blocks4.cpp">
+    <ClCompile Include="BlockCompression.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="TagTable.cpp">
@@ -51,9 +51,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="TagReader.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="uDataTypes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

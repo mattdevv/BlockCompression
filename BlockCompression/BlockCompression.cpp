@@ -1,58 +1,40 @@
 #include <iostream>
-#include <string>
 #include <thread>
 #include "BlockPlane.h"
 #include "Timer.h"
 
 int main()
 {
-    //Timer t("global", true);
+    //Timer t("global");
 
     BlockPlane::setup();
 
-    // check if only 1 block plane is needed
-    // if so run program using only 1
-    if (BlockPlane::canUseOnePlane())
-    {
-        BlockPlane blockPlane = BlockPlane();
-        blockPlane.readBlockPlane();
-        blockPlane.printBlockPlane();
-
-        //t.print();
-        return 0;
-    }
-
-    // must setup all BlockPlanes together before using any
+    // setup the blockPlane
     BlockPlane blockPlane1 = BlockPlane();
     BlockPlane blockPlane2 = BlockPlane();
 
-    // pointers used to switch which is number 1/2
-    BlockPlane* writingPlane = &blockPlane1;
-    BlockPlane* readingPlane = &blockPlane2;
+    BlockPlane* pBlockPlane1 = &blockPlane1;
+    BlockPlane* pBlockPlane2 = &blockPlane2;
 
-    // start reading the first plane so it can write while another reads
-    writingPlane->readBlockPlane();
+    pBlockPlane1->readBlockPlane();
 
-    // stop when all planes have been read
+    // Get next block plane
     while (BlockPlane::canRead())
     {
-        // start reading a second plane on background thread
-        auto readingThread = thread(&BlockPlane::readBlockPlane, readingPlane);
+        auto readingThread = thread(&BlockPlane::readBlockPlane, pBlockPlane2);
+        pBlockPlane1->printBlockPlane();
 
-        // print on main thread the results from first plane
-        writingPlane->printBlockPlane();
-
-        // once all threads are done switch thread's task between reading and writing
         readingThread.join();
-        BlockPlane* temp = writingPlane;
-        writingPlane = readingPlane;
-        readingPlane = temp;
+
+        BlockPlane* temp = pBlockPlane1;
+        pBlockPlane1 = pBlockPlane2;
+        pBlockPlane2 = temp;
     } 
 
-    // print final plane
-    writingPlane->printBlockPlane();
+    pBlockPlane1->printBlockPlane();
     
-    //t.print();
+
+    //t.stop();
 
     return 0;
 }

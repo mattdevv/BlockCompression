@@ -2,12 +2,12 @@
 
 using namespace std;
 
-TagTable BlockPlane::tagTable = TagTable();                                 // table of tags and associated ID's that have been previously seen
-vec3<ushort> BlockPlane::volumeDim = { 1, 1, 1 };                   // how many voxels fit in volume per dimension
-vec3<ushort> BlockPlane::pBlockDim = { 1, 1, 1 };                   // how many voxels fit in a parent-block per dimension
-vec3<ushort> BlockPlane::numPBlocks = { 1, 1, 1 };                  // how many Parent-blocks fit in volume per dimension
+TagTable<string, uchar> BlockPlane::tagTable = TagTable<string, uchar>();   // table of tags and associated ID's that have been previously seen
+vec3<ushort> BlockPlane::volumeDim = { 1, 1, 1 };                           // how many voxels fit in volume per dimension
+vec3<ushort> BlockPlane::pBlockDim = { 1, 1, 1 };                           // how many voxels fit in a parent-block per dimension
+vec3<ushort> BlockPlane::numPBlocks = { 1, 1, 1 };                          // how many Parent-blocks fit in volume per dimension
 ushort BlockPlane::currentPlane = 0;                                        // which XY plane (of parent blocks) is next to read
-ushort BlockPlane::numInstances = 0;                                           // how many Block Planes are active, used for shifting BlockPlane's Z position
+int BlockPlane::numInstances = 0;                                           // how many Block Planes are active, used for shifting BlockPlane's Z position
 
 void BlockPlane::setup()
 {
@@ -17,12 +17,11 @@ void BlockPlane::setup()
 
 BlockPlane::BlockPlane()
 {
-    // track how many BlockPlanes exist and give each an ID
-    planeID = numInstances;
-    numInstances++;
-
     // create blocks for input to be stored in
     createParentBlocks();
+
+    ID = numInstances;
+    numInstances++;
 }
 
 // Get the first input line and set all dimension members
@@ -70,77 +69,53 @@ inline void BlockPlane::createParentBlocks()
     // set important static variables in ParentBlock
     ParentBlock::setup(pBlockDim, &tagTable);
 
-    // create 2D plane of parent blocks
-    // order is important to read voxels correctly
+    // create 2D grid of parent blocks
     parentBlocks.reserve(numPBlocks.x * numPBlocks.y);
     for (ushort y = 0; y < numPBlocks.y; y++)
     {
         for (ushort x = 0; x < numPBlocks.x; x++)
         {
-            // setup chunk world space origin for the layer this plane represents
-            // chunk z starts at the instance number of this BlockPlane
-            vec3<ushort> chunkIndex = { x, y, planeID };
-            parentBlocks.emplace_back(chunkIndex * pBlockDim);
+            // setup chunk world space origin for first (0th) layer
+            vec3<ushort> chunkIndex = { x, y, (ushort)numInstances };
+            parentBlocks.push_back(ParentBlock(chunkIndex * pBlockDim));
         }
     }
 }
 
-// Read and store the next block plane as lines of voxels
+// Read and store the next block plane in voxels
 void BlockPlane::readBlockPlane()
 {
-    //Timer timerRead("read");
+    //Timer t("read");
+
+    // Set re-used variables for reading input
 
     // index of current parent block
     unsigned int pBlockIndex = 0;
 
-    // each voxel along z
+    // read 1 block plane of voxels into structure
+    // move along 1 voxel in z
     for (ushort a = 0; a < pBlockDim.z; a++)
     {
-        // each pBlock along y
+        // moves along 1 pBlock along y
         for (ushort b = 0; b < numPBlocks.y; b++)
         {
-            // each voxel inside pBlock y
+            // move along 1 voxel along y
             for (ushort c = 0; c < pBlockDim.y; c++)
             {
-                // each voxel along total x
+                // move along 1 pBlock in x
                 for (ushort d = 0; d < numPBlocks.x; d++)
                 {
-                    // find lines of tags by breaking lines when the next tag changes
-                    // always break the line when crossing a parent block boundary
-                    ushort length = 1;
-
-                    // first tag type
-                    uchar prevID = tagTable.getID(TagReader::getNextTagName());
-
-                    // each voxel in parent block x
-                    // start at 2nd voxel
-                    for (ushort e = 1; e < pBlockDim.x; e++)
+                    // move along 1 voxels in x
+                    for (ushort e = 0; e < pBlockDim.x; e++)
                     {
                         // Get next voxel description
                         string tagName = TagReader::getNextTagName();
+
                         uchar tagID = tagTable.getID(tagName);
 
-                        // if next tag is same just increase line length
-                        if (tagID == prevID)
-                        {
-                            // increase line length
-                            length++;
-                        }
-                        // else break the line and store the previous line's tag and size
-                        else
-                        {
-                            // store in a parent block
-                            parentBlocks[pBlockIndex].insertBlockLine({ (ushort)(e - length), c, a }, length, prevID);
-
-                            // reset line
-                            prevID = tagID;
-                            length = 1;
-                        }
+                        // store in a parent block
+                        parentBlocks[pBlockIndex].insertVoxel(tagID);
                     }
-
-                    // manually save final line in this parent block
-                    parentBlocks[pBlockIndex].insertBlockLine({ (ushort)(pBlockDim.x - length), c, a }, length, prevID);
-
                     pBlockIndex++;
                 }
                 pBlockIndex -= numPBlocks.x;
@@ -152,7 +127,7 @@ void BlockPlane::readBlockPlane()
     
     currentPlane++;
 
-    //timerRead.print();
+    //t.stop();
 }
 
 // Read voxel description forwards to get tag
@@ -180,19 +155,19 @@ inline string BlockPlane::getTagFromChars(char* start)
 // Print all blocks in parentBlocks
 void BlockPlane::printBlockPlane()
 {
-    //Timer timerWrite("write", true);
+    //Timer t("write");
 
     // Print all blocks
-    for (auto& parentBlock : parentBlocks)
+    for (size_t i=0; i<parentBlocks.size(); i++)
     {
         // use compression and print this block
-        parentBlock.compressPrint();
+        parentBlocks[i].compressPrint();
 
         // reset storage and increment parentBlock z position ready for next BlockPlane
-        parentBlock.reset(numInstances);
+        parentBlocks[i].reset(numInstances);
     }
 
-    //timerWrite.print();
+    //t.stop();
 }
 
 // check if all planes have been read
@@ -207,14 +182,9 @@ bool BlockPlane::canRead()
             return false;
         }
 
-        cerr << "BIG ERROR, read too many block planes\n";
+        cout << "BIG ERROR, read too many block planes\n";
         exit(2);
     }
 
     return true;
-}
-
-bool BlockPlane::canUseOnePlane()
-{
-    return pBlockDim.z == volumeDim.z;
 }
